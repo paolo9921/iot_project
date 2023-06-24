@@ -1,9 +1,9 @@
 
  
-#include "RadioRoute.h"
+#include "Project.h"
 
 
-configuration RadioRouteAppC {}
+configuration ProjectAppC {}
 implementation {
 /****** COMPONENTS *****/
   components Main as App;
