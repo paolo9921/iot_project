@@ -1,4 +1,5 @@
 #include "../LwPubSubMsgs.h"
+#include "printf.h"
 
 configuration PANCoordinatorAppC{}
 implementation {
@@ -14,5 +15,8 @@ implementation {
 	App.Receive -> AMReceiverC;
 	App.AMSend -> AMSenderC;
 	App.AMControl -> ActiveMessageC;
+	App.Packet -> AMSenderC;
 	
+	components SerialPrintfC;
+	components SerialStartC;
 }

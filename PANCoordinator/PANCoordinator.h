@@ -2,9 +2,9 @@
 #define PANCOORDINATOR_H
 
 
-typedef nx_struct node_info{
-	nx_uint8_t connected;
-	nx_uint8_t topics[3];
+typedef struct node_info{
+	bool connected;
+	bool topics[3];
 }node_info;
 
 #endif
