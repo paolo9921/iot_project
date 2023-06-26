@@ -30,9 +30,10 @@ module MoteC @safe() {
 	interface SplitControl as AMControl;	
 
 	//interface for timers
-	interface Timer<TMilli> as Timer0;
+	interface Timer<TMilli> as Timer0; 
 	interface Timer<TMilli> as Timer1;
-        
+	interface Timer<TMilli> as Timer2;
+
 	//other interfaces, if needed
   }
 }
@@ -70,7 +71,7 @@ implementation {
         }
 
 	
-	void connect(){
+	void connect() {
                 pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		
 		printf("Trying to connect...\n");
@@ -87,7 +88,7 @@ implementation {
         }
 
 	
-	void subscribe(uint8_t topic){
+	void subscribe(uint8_t topic) {
                 pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		new_topic = topic;
 
@@ -102,6 +103,21 @@ implementation {
                 actual_send(PAN_C, &packet);
                 return;
         }
+
+	
+	void publish(uint8_t topic, uint16_t payload) {
+		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+
+		printf("Publishing with QoS=0\n");
+		printfflush();
+
+		pub_msg->type = PUBLISH;
+		pub_msg->sender = TOS_NODE_ID;
+		pub_msg->topic = topic;
+		pub_msg->payload = payload;
+
+		actual_send(PAN_C, &packet); 
+	}
 
 
 	event void Boot.booted(){
@@ -144,6 +160,12 @@ implementation {
 		call Timer0.startOneShot(5*1000);
 	}
 
+	
+	 event void Timer2.fired() {
+                //the node is connected and now it is going to subscribe to a topic
+                publish(TEMPERATURE, 10);
+        }
+
 
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
 		/* This event is triggered when a message is sent 
@@ -161,6 +183,7 @@ implementation {
                         printf("Successfully subscribed\n");
                         sub_ack = TRUE;
 			new_topic = -1;
+			call Timer2.startOneShot(3*1000);
                 }
 
   		if (&packet == bufPtr)
