@@ -12,7 +12,7 @@
 #include "../LwPubSubMsgs.h"
 
 
-#define PAN_C 0
+#define PAN_C 1
 //#define CONNECT 0
 
 module MoteC @safe() {
@@ -58,7 +58,7 @@ implementation {
                 */
 
                 if (!locked){
-                        if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
+                if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
 				locked = TRUE;
 			}
                 }
