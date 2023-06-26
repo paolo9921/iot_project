@@ -106,7 +106,9 @@ implementation {
 		/* This event is triggered when a message is sent 
 		*  Check if the packet is sent 
 		*/
-  	}
+  		if (&packet == bufPtr)
+			locked = FALSE;
+	}
 
 	
 	event message_t* Receive.receive(message_t* bufPtr, 
