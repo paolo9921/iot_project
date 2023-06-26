@@ -62,12 +62,12 @@ implementation {
 
 	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len){
 	
-	
 	if (len == sizeof(pub_sub_msg_t)) {
 		pub_sub_msg_t* recv_msg = (pub_sub_msg_t*)payload;
 		
 		// when receive a CON msg, send CONNACK and mark this node as connected
 		if (recv_msg->type == CONNECT){
+			
 			printf("Received CONNECT msg from %d\n",recv_msg->sender);
 			printfflush();
 			nodes[recv_msg->sender-1].connected = TRUE;
@@ -89,7 +89,7 @@ implementation {
 			pub_sub_msg_t* pub_msg = (pub_sub_msg_t*)call Packet.getPayload(&packet, sizeof(pub_sub_msg_t)); 
 			
 			
-			printf("Received PUBLISH msg from %d, on topic: %d, payload:%d \n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
+			printf("Received PUBLISH msg\tfrom %u\ttopic: %u\tpayload:%u\n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
 			printfflush();
 			
 			pub_msg->type = PUBLISH;
@@ -98,10 +98,8 @@ implementation {
 			pub_msg->payload = recv_msg->payload;
 			
 			for (i = 0; i<NUM_NODE; i++){
-				if (nodes[i].topics[recv_msg->topic]){
-					actual_send(i+1, &packet);
-				}
-						
+				if (nodes[i].topics[recv_msg->topic])
+					actual_send(i+1, &packet);		
 			}	
 		}
 		
