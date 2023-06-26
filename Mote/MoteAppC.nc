@@ -1,5 +1,4 @@
-
- 
+#include "printf.h"
 #include "../LwPubSubMsgs.h"
 
 
@@ -25,11 +24,15 @@ implementation {
   App.Packet -> AMSenderC;
   App.AMSend -> AMSenderC;
   App.AMControl -> ActiveMessageC;  
+  App.Acks -> AMSenderC.Acks;
 
   //Timer interface
   App.Timer0 -> Timer0;
   
-  /****** Wire the other interfaces down here *****/
+  
+  //Debug interface
+  components SerialPrintfC;
+  components SerialStartC;
 
 }
 
