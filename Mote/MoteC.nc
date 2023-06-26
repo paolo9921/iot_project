@@ -8,10 +8,11 @@
  
  
 #include "Timer.h"
-#include "Mote.h"
+#include "../LwPubSubMsgs.h"
 
 
 #define PAN_C 0
+#define CONNECT 0
 
 module MoteC @safe() {
   uses {
@@ -28,18 +29,49 @@ module MoteC @safe() {
 	interface SplitControl as AMControl;	
 
 	//interface for timers
+	interface Timer<TMilli> as Timer0;
 
         //other interfaces, if needed
   }
 }
 
 implementation {
-	message_t packet;
-	bool locked;  	
 
-
-	enum msg_type{CONNECT = 0, SUBSCRIBE, PUBLISH};
+	//enum msg_type{CONNECT = 0, SUBSCRIBE, PUBLISH};
 	
+	message_t packet;
+	bool locked = FALSE;  	
+	
+	pub_sub_msg_t* connect_msg;
+	bool connect_ack = FALSE;
+	
+
+	//prototype of functions
+	//bool actual_send(uint16_t address, message_t* packet);	
+	
+	bool actual_send (uint16_t address, message_t* packet){
+
+                /*
+                * Implement here the logic to perform the actual send of the packet using the tinyOS interfaces
+                */
+
+                if (!locked){
+                        if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
+				locked = TRUE;
+			}
+                }
+
+                return locked;
+        }
+
+	
+	void connect(){
+                connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+
+                connect_msg->type = CONNECT;                                    connect_msg->sender = TOS_NODE_ID;                              actual_send(PAN_C, &packet);
+                return;
+        }
+
 
 	event void Boot.booted(){
 		call AMControl.start();	
@@ -48,12 +80,7 @@ implementation {
 	
 	event void AMControl.startDone(error_t err) {
 		if (err == SUCCESS) {
-			pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
-			
-			conect_msg->type = CONNECT;
-			connect_msg->sender = TOS_NODE_ID;
-			
-			actual_send(PAN_C, &packet); 
+			connect();
 			return;
 		} else {	
 			call AMControl.start();
@@ -64,26 +91,14 @@ implementation {
 	event void AMControl.stopDone(error_t err) { }
 
 	
-	bool actual_send (uint16_t address, message_t* packet){
-		/*
-		* Implement here the logic to perform the actual send of the packet using the tinyOS interfaces
-		*/
-		if (!locked){
-			if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t) == SUCCESS)
-				locked= TRUE;
-		}
-	
-		return locked;	  
-  	}
-
-
 	event void Timer0.fired() {
 		//if the connect message was acknoledged then return
 		if (connect_ack)
 			return;
 		
 		//the connect message was lost, try retransmission
-		actual_send(PANC, connect_msg, sizeof(pub_sub_msg_t)); 
+		locked = FALSE;
+		connect();	
 	}
 
 
