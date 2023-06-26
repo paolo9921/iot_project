@@ -62,7 +62,6 @@ implementation {
 
 	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len){
 	
-	
 	if (len == sizeof(pub_sub_msg_t)) {
 		pub_sub_msg_t* recv_msg = (pub_sub_msg_t*)payload;
 		
