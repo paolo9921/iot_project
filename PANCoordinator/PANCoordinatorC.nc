@@ -89,7 +89,7 @@ implementation {
 			pub_sub_msg_t* pub_msg = (pub_sub_msg_t*)call Packet.getPayload(&packet, sizeof(pub_sub_msg_t)); 
 			
 			
-			printf("Received PUBLISH msg\tfrom %u\ttopic: %u\tpayload:%u\n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
+			printf("Received PUBLISH msg\tfrom %u\ttopic:%u\tpayload:%u\n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
 			printfflush();
 			
 			pub_msg->type = PUBLISH;
