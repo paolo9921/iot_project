@@ -13,4 +13,6 @@ typedef nx_struct pub_sub_msg{
 
 enum{
 	AM_PUBSUB_MSG = 6,
-	};
+};
+
+#endif
