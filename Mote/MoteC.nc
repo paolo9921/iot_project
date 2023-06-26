@@ -106,7 +106,7 @@ implementation {
 		/* This event is triggered when a message is sent 
 		*  Check if the packet is sent 
 		*/
-  		if (packet == bufPtr)
+  		if (&packet == bufPtr)
 			locked = FALSE;
 	}
 
