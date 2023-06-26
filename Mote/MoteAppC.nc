@@ -13,7 +13,9 @@ implementation {
   components new AMReceiverC(AM_PUBSUB_MSG);
   components ActiveMessageC;  
 
-  components new TimerMilliC() as Timer0; 
+  components new TimerMilliC() as Timer0;
+  components new TimerMilliC() as Timer1;
+  components new TimerMilliC() as Timer2;
   
   /****** INTERFACES *****/
   
@@ -28,7 +30,8 @@ implementation {
 
   //Timer interface
   App.Timer0 -> Timer0;
-  
+  App.Timer1 -> Timer1;
+  App.Timer2 -> Timer2;
   
   //Debug interface
   components SerialPrintfC;

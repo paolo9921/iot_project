@@ -12,8 +12,12 @@
 #include "../LwPubSubMsgs.h"
 
 
+<<<<<<< HEAD
 #define PAN_C 1
 //#define CONNECT 0
+=======
+#define PAN_C 9
+>>>>>>> 9013e8850c7bbde0732ec179d22a1b2cc106eba7
 
 module MoteC @safe() {
   uses {
@@ -31,22 +35,27 @@ module MoteC @safe() {
 	interface SplitControl as AMControl;	
 
 	//interface for timers
-	interface Timer<TMilli> as Timer0;
+	interface Timer<TMilli> as Timer0; 
+	interface Timer<TMilli> as Timer1;
+	interface Timer<TMilli> as Timer2;
 
-        //other interfaces, if needed
+	//other interfaces, if needed
   }
 }
 
 implementation {
 
-	enum msg_type{CONNECT = 0, SUBSCRIBE, PUBLISH};
-	
+	enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
+	enum topics {TEMPERATURE = 0, HUMIDITY, LUMONISITY};
+
 	message_t packet;
 	bool locked = FALSE;  	
 	
-	pub_sub_msg_t* connect_msg;
 	bool connect_ack = FALSE;
 	
+	uint8_t new_topic;
+	bool sub_ack = FALSE;
+
 
 	//prototype of functions
 	bool actual_send(uint16_t address, message_t* packet);	
@@ -67,23 +76,56 @@ implementation {
         }
 
 	
-	void connect(){
-                connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+	void connect() {
+                pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		
 		printf("Trying to connect...\n");
 		printfflush();
 	
                 connect_msg->type = CONNECT;
 		connect_msg->sender = TOS_NODE_ID;
+		
 		call Acks.requestAck(&packet);
 		actual_send(PAN_C, &packet);
 		call Timer0.startOneShot(5*1000);
+                
+		return;
+        }
+
+	
+	void subscribe(uint8_t topic) {
+                pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+		new_topic = topic;
+
+                printf("Trying to subscribe...\n");
+                printfflush();
+
+                sub_msg->type = SUBSCRIBE;
+                sub_msg->sender = TOS_NODE_ID;
+		sub_msg->topic = topic;
+
+                call Acks.requestAck(&packet);
+                actual_send(PAN_C, &packet);
                 return;
         }
 
+	
+	void publish(uint8_t topic, uint16_t payload) {
+		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+
+		printf("Publishing with QoS=0\n");
+		printfflush();
+
+		pub_msg->type = PUBLISH;
+		pub_msg->sender = TOS_NODE_ID;
+		pub_msg->topic = topic;
+		pub_msg->payload = payload;
+
+		actual_send(PAN_C, &packet); 
+	}
+
 
 	event void Boot.booted(){
-		printf("Bella\n");
 		printf("Starting node: %u\n", TOS_NODE_ID);
 		printfflush();
 		call AMControl.start();	
@@ -111,17 +153,43 @@ implementation {
 		//the connect message was lost, try retransmission
 		if (!connect_ack)	
 			connect();
+		else if (!sub_ack)
+			subscribe(new_topic);
 	}
+
+	
+	event void Timer1.fired() {
+		//the node is connected and now it is going to subscribe to a topic
+		new_topic = TEMPERATURE;
+		subscribe(TEMPERATURE);
+		call Timer0.startOneShot(5*1000);
+	}
+
+	
+	 event void Timer2.fired() {
+                //the node is connected and now it is going to subscribe to a topic
+                publish(TEMPERATURE, 10);
+        }
 
 
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
 		/* This event is triggered when a message is sent 
 		*  Check if the packet is sent 
 		*/
-		if (call Acks.wasAcked(bufPtr)){
+
+		pub_sub_msg_t* sent_msg = (pub_sub_msg_t *) call Packet.getPayload(bufPtr, sizeof(pub_sub_msg_t));
+		
+		if ( sent_msg->type == CONNECT && call Acks.wasAcked(bufPtr)){
 			printf("Successfully connected\n");
 			connect_ack = TRUE;
-		}
+			call Timer1.startOneShot(2*1000);
+
+		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr)){
+                        printf("Successfully subscribed\n");
+                        sub_ack = TRUE;
+			new_topic = -1;
+			call Timer2.startOneShot(3*1000);
+                }
 
   		if (&packet == bufPtr)
 			locked = FALSE;

@@ -21,11 +21,5 @@ implementation {
 	components SerialPrintfC;
 	components SerialStartC;
 	
-	components SerialActiveMessageC;
-	components new SerialAMSenderC(AM_PUBSUB_MSG);
-	
-	App.AMSend -> SerialAMSenderC;
-	App.AMControl -> SerialActiveMessageC;
-	
 }
 
