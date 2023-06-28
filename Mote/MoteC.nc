@@ -14,6 +14,7 @@
 
 #define PAN_C 9
 
+
 module MoteC @safe() {
   uses {
   
@@ -34,14 +35,12 @@ module MoteC @safe() {
 	interface Timer<TMilli> as Timer1;
 	interface Timer<TMilli> as Timer2;
 
-	//other interfaces, if needed
+	//interface for randomness
+	interface Random;
   }
 }
 
 implementation {
-
-	enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
-	enum topics {TEMPERATURE = 0, HUMIDITY, LUMONISITY};
 
 	message_t packet;
 	bool locked = FALSE;  	
@@ -52,8 +51,15 @@ implementation {
 	bool sub_ack = FALSE;
 
 
+
 	//prototype of functions
-	bool actual_send(uint16_t address, message_t* packet);	
+	void connect();
+	void subscribe(uint8_t topic);
+	void publish(uint8_t topic, uint16_t payload);
+	bool actual_send(uint16_t address, message_t* packet);
+
+
+	
 	
 	bool actual_send (uint16_t address, message_t* packet){
 
@@ -82,7 +88,8 @@ implementation {
 		
 		call Acks.requestAck(&packet);
 		actual_send(PAN_C, &packet);
-		call Timer0.startOneShot(5*1000);
+		
+		call Timer0.startOneShot(TIME_TO_LOSS * 1000);
                 
 		return;
         }
@@ -161,9 +168,9 @@ implementation {
 	}
 
 	
-	 event void Timer2.fired() {
-                //the node is connected and now it is going to subscribe to a topic
-                publish(TEMPERATURE, 10);
+	event void Timer2.fired() {
+                //it is going to publish to a random topic, a random value
+                publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
         }
 
 
