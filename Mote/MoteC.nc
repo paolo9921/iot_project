@@ -12,12 +12,10 @@
 #include "../LwPubSubMsgs.h"
 
 
-<<<<<<< HEAD
+
 #define PAN_C 1
-//#define CONNECT 0
-=======
-#define PAN_C 9
->>>>>>> 9013e8850c7bbde0732ec179d22a1b2cc106eba7
+
+
 
 module MoteC @safe() {
   uses {
