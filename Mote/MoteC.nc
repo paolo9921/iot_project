@@ -12,9 +12,7 @@
 #include "../LwPubSubMsgs.h"
 
 
-
 #define PAN_C 1
-
 
 
 module MoteC @safe() {
@@ -37,14 +35,12 @@ module MoteC @safe() {
 	interface Timer<TMilli> as Timer1;
 	interface Timer<TMilli> as Timer2;
 
-	//other interfaces, if needed
+	//interface for randomness
+	interface Random;
   }
 }
 
 implementation {
-
-	enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
-	enum topics {TEMPERATURE = 0, HUMIDITY, LUMONISITY};
 
 	message_t packet;
 	bool locked = FALSE;  	
@@ -55,8 +51,15 @@ implementation {
 	bool sub_ack = FALSE;
 
 
+
 	//prototype of functions
-	bool actual_send(uint16_t address, message_t* packet);	
+	void connect();
+	void subscribe(uint8_t topic);
+	void publish(uint8_t topic, uint16_t payload);
+	bool actual_send(uint16_t address, message_t* packet);
+
+
+	
 	
 	bool actual_send (uint16_t address, message_t* packet){
 
@@ -85,7 +88,8 @@ implementation {
 		
 		call Acks.requestAck(&packet);
 		actual_send(PAN_C, &packet);
-		call Timer0.startOneShot(5*1000);
+		
+		call Timer0.startOneShot(TIME_TO_LOSS * 1000);
                 
 		return;
         }
@@ -164,9 +168,9 @@ implementation {
 	}
 
 	
-	 event void Timer2.fired() {
-                //the node is connected and now it is going to subscribe to a topic
-                publish(TEMPERATURE, 10);
+	event void Timer2.fired() {
+                //it is going to publish to a random topic, a random value
+                publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
         }
 
 
@@ -196,8 +200,13 @@ implementation {
 	}
 
 	
-	event message_t* Receive.receive(message_t* bufPtr, 
-				   void* payload, uint8_t len) {
+	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len) {
+		
+		if (len == sizeof(pub_sub_msg_t)) {
+			pub_sub_msg_t* recv_msg = (pub_sub_msg_t*) payload;
+			printf("Received message, type: %u, from: %u, topic: %u, payload: %u\n", recv_msg->type, recv_msg->sender, recv_msg->topic, recv_msg->payload);
+			printfflush();
+		}
 
 		return bufPtr;
 	}

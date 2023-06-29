@@ -17,6 +17,8 @@ implementation {
   components new TimerMilliC() as Timer1;
   components new TimerMilliC() as Timer2;
   
+  components RandomC;
+
   /****** INTERFACES *****/
   
   //Boot interface
@@ -25,6 +27,7 @@ implementation {
   //Radio interface
   App.Packet -> AMSenderC;
   App.AMSend -> AMSenderC;
+  App.Receive -> AMReceiverC;
   App.AMControl -> ActiveMessageC;  
   App.Acks -> AMSenderC.Acks;
 
@@ -32,6 +35,11 @@ implementation {
   App.Timer0 -> Timer0;
   App.Timer1 -> Timer1;
   App.Timer2 -> Timer2;
+
+
+  //Random interface
+  App.Random -> RandomC;
+
   
   //Debug interface
   components SerialPrintfC;
