@@ -27,6 +27,7 @@ implementation {
   //Radio interface
   App.Packet -> AMSenderC;
   App.AMSend -> AMSenderC;
+  App.Receive -> AMReceiverC;
   App.AMControl -> ActiveMessageC;  
   App.Acks -> AMSenderC.Acks;
 
@@ -37,7 +38,7 @@ implementation {
 
 
   //Random interface
-  App.Random -> Random;
+  App.Random -> RandomC;
 
   
   //Debug interface

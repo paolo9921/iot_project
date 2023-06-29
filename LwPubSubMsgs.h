@@ -3,6 +3,8 @@
 
 #include "message.h"
 
+#define TIME_TO_LOSS 5
+#define MSG_QUEUE_SIZE 32
 
 typedef nx_struct pub_sub_msg{
 	nx_uint8_t type;
@@ -15,5 +17,9 @@ typedef nx_struct pub_sub_msg{
 enum{
 	AM_PUBSUB_MSG = 6,
 };
+
+enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
+
+enum topics {TEMPERATURE = 0, HUMIDITY, LUMONISITY};
 
 #endif

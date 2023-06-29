@@ -12,7 +12,6 @@ module PANCoordinatorC {
 		interface AMSend;
 		interface SplitControl as AMControl;
 		interface Queue<queue_msg_t> as MsgQueue;
-		//interface Queue<uint16_t> as DestQueue;
 	}
 }
 
@@ -43,13 +42,14 @@ implementation {
 				for(j=0; j<3; j++)
 					nodes[i].topics[j] = FALSE;
 			}
-		printf("Nodes connection and topics initialized\n");
-		printfflush();
-		return;
-		}
-		else {
+
+			printf("Nodes connection and topics initialized\n");
+			printfflush();
+	
+			return;
+		} 
+		else 
 		  call AMControl.start();
-		}
 	  }
 
 	event void AMControl.stopDone(error_t err) {
@@ -59,10 +59,13 @@ implementation {
 	
 	void send_publish(){
 		queue_msg_t dequeued = (queue_msg_t) call MsgQueue.dequeue();
-		//uint16_t dest = (uint16_t) call DestQueue.dequeue();
 		pub_sub_msg_t* to_send = (pub_sub_msg_t *) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		
 		*to_send = *dequeued.payload;
+
+		printf("Sending msg to: %u, on topic:%u\n", dequeued.dest, dequeued.payload->topic);
+                printfflush();
+
 		actual_send(dequeued.dest, &packet);
 	}
 	
@@ -85,23 +88,24 @@ implementation {
 				if (nodes[recv_msg->sender-1].connected)
 					nodes[recv_msg->sender-1].topics[recv_msg->topic] = TRUE;	
 			} else if (recv_msg->type == PUBLISH) {
-				bool s;
 				queue_msg_t to_enqueue;
 				printf("Received PUBLISH msg\tfrom %u\ttopic:%u\tpayload:%u\n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
 				printfflush();
 			
 				for (i=0; i<NUM_NODE; i++){
 					if (nodes[i].topics[recv_msg->topic]){
-						//r = (call DestQueue.enqueue(i+1)) == SUCCESS;
 						to_enqueue.dest = i+1;
 						to_enqueue.payload = recv_msg;
-						s = (call MsgQueue.enqueue(to_enqueue)) == SUCCESS;
-						printf("Enqueued message, with dest:%d\t and payload: %d, %d, %d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
-						printf("%u, %u\n", s, call MsgQueue.size());
-						printfflush();
+						
+						if ( (call MsgQueue.enqueue(to_enqueue)) == SUCCESS){
+							printf("Enqueued message, with dest:%d\t and payload: %d, %d, %d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
+							printfflush();
+						}
 					}
-				}	
-				send_publish();	
+				}
+				
+				if (call MsgQueue.empty() == FALSE )	
+					send_publish();	
 			}
 		}
 	
@@ -116,7 +120,7 @@ implementation {
 			if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS)
 				locked = TRUE;
 
-			printf("Sending msg to: %d, on topic:\n", address);
+			printf("Locking the radio, sending msg...\n");
 			printfflush();
 		}
 
@@ -129,6 +133,7 @@ implementation {
 		*/
 		if (&packet == bufPtr)
 			locked = FALSE;
+
 		printf("Send done, unlocking the radio\n");
 		printfflush();
 		

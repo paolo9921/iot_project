@@ -12,12 +12,7 @@
 #include "../LwPubSubMsgs.h"
 
 
-<<<<<<< HEAD
 #define PAN_C 1
-//#define CONNECT 0
-=======
-#define PAN_C 9
->>>>>>> 9013e8850c7bbde0732ec179d22a1b2cc106eba7
 
 
 module MoteC @safe() {
@@ -205,8 +200,13 @@ implementation {
 	}
 
 	
-	event message_t* Receive.receive(message_t* bufPtr, 
-				   void* payload, uint8_t len) {
+	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len) {
+		
+		if (len == sizeof(pub_sub_msg_t)) {
+			pub_sub_msg_t* recv_msg = (pub_sub_msg_t*) payload;
+			printf("Received message, type: %u, from: %u, topic: %u, payload: %u\n", recv_msg->type, recv_msg->sender, recv_msg->topic, recv_msg->payload);
+			printfflush();
+		}
 
 		return bufPtr;
 	}
