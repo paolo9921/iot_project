@@ -97,9 +97,9 @@ implementation {
 	
 	void subscribe(uint8_t topic) {
                 pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
-		new_topic = topic;
+		// new_topic = topic;
 
-                printf("Trying to subscribe...\n");
+                printf("my Id: %u.Trying to subscribe...\n", TOS_NODE_ID);
                 printfflush();
 
                 sub_msg->type = SUBSCRIBE;
@@ -162,16 +162,46 @@ implementation {
 	
 	event void Timer1.fired() {
 		//the node is connected and now it is going to subscribe to a topic
+		
+		//node 3 and 6 subscribe to all the 3 topics
+		if(TOS_NODE_ID % 3 == 0){
 		new_topic = TEMPERATURE;
 		subscribe(TEMPERATURE);
 		call Timer0.startOneShot(5*1000);
+		new_topic = HUMIDITY;
+		subscribe(HUMIDITY);
+		call Timer0.startOneShot(5*1000);
+		new_topic = LUMONISITY;
+		subscribe(LUMONISITY);
+		call Timer0.startOneShot(5*1000);
+		}
+		
+		//node 1,4,7 subscribe to 2 topic
+		else if (TOS_NODE_ID % 3 == 1){
+		new_topic = TEMPERATURE;
+		subscribe(TEMPERATURE);
+		call Timer0.startOneShot(5*1000);
+		new_topic = HUMIDITY;
+		subscribe(HUMIDITY);
+		call Timer0.startOneShot(5*1000);
+		}
+		
+		//node 2,5,8 subscribe to only 1 topic
+		else {
+		new_topic = HUMIDITY;
+		subscribe(HUMIDITY);
+		call Timer0.startOneShot(5*1000);
+		}
 	}
 
 	
 	event void Timer2.fired() {
-                //it is going to publish to a random topic, a random value
-                publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
-        }
+        //it is going to publish to a random topic, a random value
+        publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
+        
+        //start a random timer (from 10 to 20 seconds) è giusto??
+        call Timer2.startOneShot(call Random.rand16() % 20 +10);
+    }
 
 
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
@@ -187,11 +217,13 @@ implementation {
 			call Timer1.startOneShot(2*1000);
 
 		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr)){
-                        printf("Successfully subscribed\n");
-                        sub_ack = TRUE;
+            printf("Successfully subscribed\n");
+            sub_ack = TRUE;
 			new_topic = -1;
 			call Timer2.startOneShot(3*1000);
-                }
+        }
+               
+          	
 
   		if (&packet == bufPtr)
 			locked = FALSE;
