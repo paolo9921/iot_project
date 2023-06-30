@@ -20,6 +20,6 @@ enum{
 
 enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
 
-enum topics {TEMPERATURE = 0, HUMIDITY, LUMONISITY};
+enum topics {TEMPERATURE = 0, HUMIDITY, LUMINOSITY};
 
 #endif

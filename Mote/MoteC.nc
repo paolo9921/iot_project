@@ -49,7 +49,11 @@ implementation {
 	
 	uint8_t new_topic;
 	bool sub_ack = FALSE;
-
+	
+	uint8_t nSub;
+	uint8_t totSub;
+	
+	uint16_t interval;
 
 
 	//prototype of functions
@@ -62,29 +66,28 @@ implementation {
 	
 	
 	bool actual_send (uint16_t address, message_t* packet){
-
-                /*
-                * Implement here the logic to perform the actual send of the packet using the tinyOS interfaces
-                */
-
-                if (!locked){
-                if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
+                
+    	if (!locked){
+        	if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
 				locked = TRUE;
 			}
-                }
-
-                return locked;
         }
+
+		return locked;
+	}
 
 	
 	void connect() {
-                pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+    	pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		
-		printf("Trying to connect...\n");
+		//printf("Trying to connect...\n");
 		printfflush();
 	
-                connect_msg->type = CONNECT;
+        connect_msg->type = CONNECT;
 		connect_msg->sender = TOS_NODE_ID;
+		
+		printf("send connection\n");
+		printfflush();
 		
 		call Acks.requestAck(&packet);
 		actual_send(PAN_C, &packet);
@@ -92,30 +95,30 @@ implementation {
 		call Timer0.startOneShot(TIME_TO_LOSS * 1000);
                 
 		return;
-        }
+	}
 
 	
 	void subscribe(uint8_t topic) {
-                pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+		pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		// new_topic = topic;
 
-                printf("my Id: %u.Trying to subscribe...\n", TOS_NODE_ID);
-                printfflush();
+		printf("my Id: %u.Trying to subscribe to topic %u\n", TOS_NODE_ID, topic);
+		printfflush();
 
-                sub_msg->type = SUBSCRIBE;
-                sub_msg->sender = TOS_NODE_ID;
+		sub_msg->type = SUBSCRIBE;
+		sub_msg->sender = TOS_NODE_ID;
 		sub_msg->topic = topic;
 
-                call Acks.requestAck(&packet);
-                actual_send(PAN_C, &packet);
-                return;
-        }
+		call Acks.requestAck(&packet);
+		actual_send(PAN_C, &packet);
+		return;
+	}
 
 	
 	void publish(uint8_t topic, uint16_t payload) {
 		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 
-		printf("Publishing with QoS=0\n");
+		printf("Publishing on topic: %u with QoS=0\n", topic);
 		printfflush();
 
 		pub_msg->type = PUBLISH;
@@ -136,9 +139,29 @@ implementation {
 	
 	event void AMControl.startDone(error_t err) {
 		if (err == SUCCESS) {
+			
 			printf("Radio successfully started\n");
 			printfflush();
 			connect();
+			nSub = 0;
+			
+			
+			//node 3,6,9 subscribe to all 3 topics
+			if(TOS_NODE_ID % 3 == 0){
+				totSub = 3;
+				new_topic = 0;
+			}
+			//node 4, 7 subscribe to 2 topics (0,1)
+			else if(TOS_NODE_ID % 3 == 1){
+				totSub = 2;
+				new_topic = 0;
+			}
+			//node 2,5,8 subscribe to 1 topic (2)
+			else {
+				totSub = 1;
+				new_topic = 2;
+			}
+			
 			return;
 		} else {	
 			call AMControl.start();
@@ -163,35 +186,11 @@ implementation {
 	event void Timer1.fired() {
 		//the node is connected and now it is going to subscribe to a topic
 		
-		//node 3 and 6 subscribe to all the 3 topics
-		if(TOS_NODE_ID % 3 == 0){
-		new_topic = TEMPERATURE;
-		subscribe(TEMPERATURE);
+		//printf("sending new subscribe to topic: %u\n",new_topic);
+		//printfflush();
+		subscribe(new_topic);
 		call Timer0.startOneShot(5*1000);
-		new_topic = HUMIDITY;
-		subscribe(HUMIDITY);
-		call Timer0.startOneShot(5*1000);
-		new_topic = LUMONISITY;
-		subscribe(LUMONISITY);
-		call Timer0.startOneShot(5*1000);
-		}
 		
-		//node 1,4,7 subscribe to 2 topic
-		else if (TOS_NODE_ID % 3 == 1){
-		new_topic = TEMPERATURE;
-		subscribe(TEMPERATURE);
-		call Timer0.startOneShot(5*1000);
-		new_topic = HUMIDITY;
-		subscribe(HUMIDITY);
-		call Timer0.startOneShot(5*1000);
-		}
-		
-		//node 2,5,8 subscribe to only 1 topic
-		else {
-		new_topic = HUMIDITY;
-		subscribe(HUMIDITY);
-		call Timer0.startOneShot(5*1000);
-		}
 	}
 
 	
@@ -199,8 +198,12 @@ implementation {
         //it is going to publish to a random topic, a random value
         publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
         
-        //start a random timer (from 10 to 20 seconds) è giusto??
-        call Timer2.startOneShot(call Random.rand16() % 20 +10);
+        // si puo anche mettere tutto dentro a startOneShot ma cosi mi stampavo interval
+        interval = (call Random.rand16() % 20)*1000;
+        printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
+		printfflush();
+        //start a random timer
+        call Timer2.startOneShot(interval);
     }
 
 
@@ -213,17 +216,22 @@ implementation {
 		
 		if ( sent_msg->type == CONNECT && call Acks.wasAcked(bufPtr)){
 			printf("Successfully connected\n");
+			printfflush();
 			connect_ack = TRUE;
 			call Timer1.startOneShot(2*1000);
 
 		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr)){
-            printf("Successfully subscribed\n");
+            printf("Successfully subscribed to topic %u, new_topic = %u\n", sent_msg->topic, new_topic);
+            printfflush();
             sub_ack = TRUE;
-			new_topic = -1;
-			call Timer2.startOneShot(3*1000);
-        }
-               
-          	
+            
+            nSub++;
+            if(nSub < totSub){
+            	new_topic++;
+              	call Timer1.startOneShot(500);
+            }
+			call Timer2.startOneShot(5*1000);
+        } 	
 
   		if (&packet == bufPtr)
 			locked = FALSE;

@@ -39,6 +39,8 @@ implementation {
 		if (err == SUCCESS) {
 			for (i=0; i<NUM_NODE; i++){
 				nodes[i].connected = FALSE;
+				printf("Nodes %u connected = %u\n", i, nodes[i].connected);
+				printfflush();
 				for(j=0; j<3; j++)
 					nodes[i].topics[j] = FALSE;
 			}
@@ -80,21 +82,30 @@ implementation {
 					
 				printf("Received CONNECT msg from %d\n",recv_msg->sender);
 				printfflush();
-				nodes[recv_msg->sender-1].connected = TRUE;
+				nodes[recv_msg->sender-2].connected = TRUE;
 			} else if (recv_msg->type == SUBSCRIBE) {
 				printf("Received SUBSCRIBE msg from %d, to topic: %d\n",recv_msg->sender,recv_msg->topic);
 				printfflush();
 				//the node is connected, update its topic subscription
-				if (nodes[recv_msg->sender-1].connected)
-					nodes[recv_msg->sender-1].topics[recv_msg->topic] = TRUE;	
+				if (nodes[recv_msg->sender-2].connected)
+					nodes[recv_msg->sender-2].topics[recv_msg->topic] = TRUE;
+					
+				//debug topic list for the node
+				for(i=0;i<3;i++){
+					printf("node[%u].topic[%u] = %u\n", recv_msg->sender,i, nodes[recv_msg->sender-2].topics[i]);
+					printfflush();
+				}	
+				
 			} else if (recv_msg->type == PUBLISH) {
 				queue_msg_t to_enqueue;
 				printf("Received PUBLISH msg\tfrom %u\ttopic:%u\tpayload:%u\n",recv_msg->sender,recv_msg->topic, recv_msg->payload);
 				printfflush();
+				
 			
-				for (i=1; i<NUM_NODE; i++){
+				for (i=0; i<NUM_NODE; i++){
+
 					if (nodes[i].topics[recv_msg->topic]){
-						to_enqueue.dest = i+1;
+						to_enqueue.dest = i+2;
 						to_enqueue.payload = recv_msg;
 						
 						if ( (call MsgQueue.enqueue(to_enqueue)) == SUCCESS){
