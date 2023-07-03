@@ -95,7 +95,7 @@ implementation {
 				for (i=0; i<NUM_NODE; i++){
 					if (nodes[i].topics[recv_msg->topic]){
 						to_enqueue.dest = i+1;
-						to_enqueue.payload = recv_msg;
+						*(to_enqueue.payload) = *recv_msg;
 						
 						if ( (call MsgQueue.enqueue(to_enqueue)) == SUCCESS){
 							printf("Enqueued message, with dest:%d\t and payload: %d, %d, %d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
