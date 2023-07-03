@@ -105,18 +105,17 @@ implementation {
 				for (i=0; i<NUM_NODE; i++){
 
 					if (nodes[i].topics[recv_msg->topic]){
-<<<<<<< HEAD
-						to_enqueue.dest = i+1;
-						to_enqueue.payload = recv_msg;
-=======
 						to_enqueue.dest = i+2;
 						to_enqueue.payload = recv_msg;
->>>>>>> 6101529654640ca4e7a468b7855489c1de83dffc
-						
+
 						if ( (call MsgQueue.enqueue(to_enqueue)) == SUCCESS){
-							printf("Enqueued message, with dest:%d\t and payload: %d, %d, %d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
+							printf("Enqueued message, with dest:%d\t and payload: topic=%d, sender=%d, payload=%d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
 							printfflush();
 						}
+						else {
+							printf("Error in enqueueing message, the queue was already full");
+							printfflush();
+						} 
 					}
 				}
 				

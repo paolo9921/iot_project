@@ -1,12 +1,3 @@
-
-/*
-*	IMPORTANT:
-*	The code will be avaluated based on:
-*		Code design  
-*
-*/
- 
- 
 #include "Timer.h"
 #include "printf.h"
 #include "../LwPubSubMsgs.h"
@@ -178,8 +169,9 @@ implementation {
 		//the connect message was lost, try retransmission
 		if (!connect_ack)	
 			connect();
-		else if (!sub_ack)
+		else if (!sub_ack){
 			subscribe(new_topic);
+		}
 	}
 
 	
@@ -195,16 +187,10 @@ implementation {
 
 	
 	event void Timer2.fired() {
-        //it is going to publish to a random topic, a random value
-        publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
-        
-        // si puo anche mettere tutto dentro a startOneShot ma cosi mi stampavo interval
-        interval = (call Random.rand16() % 20)*1000;
-        printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
-		printfflush();
-        //start a random timer
-        call Timer2.startOneShot(interval);
-    }
+        	//it is going to publish to a random topic, a random value
+	        publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
+    	    
+    	}
 
 
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
@@ -220,6 +206,13 @@ implementation {
 			connect_ack = TRUE;
 			call Timer1.startOneShot(2*1000);
 
+			// si puo anche mettere tutto dentro a startOneShot ma cosi mi stampavo interval
+                        interval = ((call Random.rand16() % 20)+1)*1000;
+                        printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
+                        printfflush();
+                                
+                        call Timer2.startPeriodic(interval);
+
 		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr)){
             printf("Successfully subscribed to topic %u, new_topic = %u\n", sent_msg->topic, new_topic);
             printfflush();
@@ -230,7 +223,6 @@ implementation {
             	new_topic++;
               	call Timer1.startOneShot(500);
             }
-			call Timer2.startOneShot(5*1000);
         } 	
 
   		if (&packet == bufPtr)
