@@ -61,7 +61,7 @@ implementation {
 	
 	void send_publish(){
 		queue_msg_t dequeued = (queue_msg_t) call MsgQueue.dequeue();
-		pub_sub_msg_t* to_send = (pub_sub_msg_t *) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+		pub_sub_msg_t* to_send = (pub_sub_msg_t *) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 		
 		*to_send = *dequeued.payload;
 
@@ -74,7 +74,7 @@ implementation {
 
 	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len){
 			
-		if (len == sizeof(pub_sub_msg_t)) {
+		if (len == PUB_SUB_MSG_SIZE) {
 			pub_sub_msg_t* recv_msg = (pub_sub_msg_t*)payload;
 		
 			// when receive a CON msg, send CONNACK and mark this node as connected
@@ -132,7 +132,7 @@ implementation {
 	bool actual_send (uint16_t address, message_t* packet){
 
 		if (!locked){
-			if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS)
+			if (call AMSend.send(address, packet, PUB_SUB_MSG_SIZE) == SUCCESS)
 				locked = TRUE;
 
 			printf("Locking the radio, sending msg...\n");
