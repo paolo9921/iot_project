@@ -5,45 +5,44 @@
 
 #define PAN_C 1
 
-
 module MoteC @safe() {
-  uses {
-  
-    /****** INTERFACES *****/
-	
-	//boot interface
-   	interface Boot;
- 
-        //interfaces for communication
-	interface Packet;
-	interface AMSend;
-	interface Receive;
-	interface PacketAcknowledgements as Acks;
-	interface SplitControl as AMControl;	
+	uses {
 
-	//interface for timers
-	interface Timer<TMilli> as Timer0; 
-	interface Timer<TMilli> as Timer1;
-	interface Timer<TMilli> as Timer2;
+		/****** INTERFACES *****/
 
-	//interface for randomness
-	interface Random;
-  }
+		//boot interface
+		interface Boot;
+
+		//interfaces for communication
+		interface Packet;
+		interface AMSend;
+		interface Receive;
+		interface PacketAcknowledgements as Acks;
+		interface SplitControl as AMControl;	
+
+		//interface for timers
+		interface Timer<TMilli> as Timer0; 
+		interface Timer<TMilli> as Timer1;
+		interface Timer<TMilli> as Timer2;
+
+		//interface for randomness
+		interface Random;
+	}
 }
 
 implementation {
 
 	message_t packet;
 	bool locked = FALSE;  	
-	
+
 	bool connect_ack = FALSE;
-	
+
 	uint8_t new_topic;
 	bool sub_ack = FALSE;
-	
+
 	uint8_t nSub;
 	uint8_t totSub;
-	
+
 	uint16_t interval;
 
 
@@ -62,7 +61,7 @@ implementation {
         	if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
 				locked = TRUE;
 			}
-        }
+      }
 
 		return locked;
 	}
@@ -71,16 +70,14 @@ implementation {
 	void connect() {
     	pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
 		
-		//printf("Trying to connect...\n");
+		printf("Trying to connect...\n");
 		printfflush();
-	
-        connect_msg->type = CONNECT;
+
+      connect_msg->type = CONNECT;
 		connect_msg->sender = TOS_NODE_ID;
 		
-		printf("send connection\n");
-		printfflush();
-		
 		call Acks.requestAck(&packet);
+	
 		actual_send(PAN_C, &packet);
 		
 		call Timer0.startOneShot(TIME_TO_LOSS * 1000);
@@ -91,9 +88,8 @@ implementation {
 	
 	void subscribe(uint8_t topic) {
 		pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
-		// new_topic = topic;
 
-		printf("my Id: %u.Trying to subscribe to topic %u\n", TOS_NODE_ID, topic);
+		printf("My Id: %u. Trying to subscribe to topic %u...\n", TOS_NODE_ID, topic);
 		printfflush();
 
 		sub_msg->type = SUBSCRIBE;
@@ -101,7 +97,9 @@ implementation {
 		sub_msg->topic = topic;
 
 		call Acks.requestAck(&packet);
+
 		actual_send(PAN_C, &packet);
+
 		return;
 	}
 
@@ -133,9 +131,9 @@ implementation {
 			
 			printf("Radio successfully started\n");
 			printfflush();
+
 			connect();
 			nSub = 0;
-			
 			
 			//node 3,6,9 subscribe to all 3 topics
 			if(TOS_NODE_ID % 3 == 0){
@@ -195,32 +193,30 @@ implementation {
 
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
 		/* This event is triggered when a message is sent 
-		*  Check if the packet is sent 
+		*  Check if the packet is sent
 		*/
-
 		pub_sub_msg_t* sent_msg = (pub_sub_msg_t *) call Packet.getPayload(bufPtr, sizeof(pub_sub_msg_t));
 		
-		if ( sent_msg->type == CONNECT && call Acks.wasAcked(bufPtr)){
+		if ( sent_msg->type == CONNECT && call Acks.wasAcked(bufPtr) ){
 			printf("Successfully connected\n");
 			printfflush();
+
 			connect_ack = TRUE;
 			call Timer1.startOneShot(2*1000);
 
-			// si puo anche mettere tutto dentro a startOneShot ma cosi mi stampavo interval
-                        interval = ((call Random.rand16() % 20)+1)*1000;
-                        printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
-                        printfflush();
-                                
-                        call Timer2.startPeriodic(interval);
+			interval = ((call Random.rand16() % 20)+1)*1000;
+			printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
+			printfflush();
+						
+			call Timer2.startPeriodic(interval);
 
-		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr)){
+		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr) ){
             printf("Successfully subscribed to topic %u, new_topic = %u\n", sent_msg->topic, new_topic);
             printfflush();
             sub_ack = TRUE;
             
-            nSub++;
-            if(nSub < totSub){
-            	new_topic++;
+      		new_topic++;
+            if(new_topic < totSub){
               	call Timer1.startOneShot(500);
             }
         } 	
