@@ -13,10 +13,7 @@ typedef nx_struct pub_sub_msg{
 	nx_uint16_t payload;
 } pub_sub_msg_t;
 
-
-enum{
-	AM_PUBSUB_MSG = 6,
-};
+enum{ AM_PUBSUB_MSG = 6 };
 
 enum msg_type {CONNECT = 0, SUBSCRIBE, PUBLISH};
 
