@@ -47,5 +47,3 @@ implementation {
    components SerialStartC;
 
 }
-
-
