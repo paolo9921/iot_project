@@ -3,6 +3,8 @@
 
 #include "../LwPubSubMsgs.h"
 
+#define MSG_QUEUE_SIZE 32
+
 typedef struct node_info{
 	bool connected;
 	bool topics[3];
