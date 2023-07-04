@@ -58,7 +58,7 @@ implementation {
 	bool actual_send (uint16_t address, message_t* packet){
                 
     	if (!locked){
-        	if (call AMSend.send(address, packet, sizeof(pub_sub_msg_t)) == SUCCESS){
+        	if (call AMSend.send(address, packet, PUB_SUB_MSG_SIZE) == SUCCESS){
 				locked = TRUE;
 			}
       }
@@ -68,7 +68,7 @@ implementation {
 
 	
 	void connect() {
-    	pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+    	pub_sub_msg_t* connect_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 		
 		printf("Trying to connect...\n");
 		printfflush();
@@ -87,7 +87,7 @@ implementation {
 
 	
 	void subscribe(uint8_t topic) {
-		pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+		pub_sub_msg_t* sub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 
 		printf("My Id: %u. Trying to subscribe to topic %u...\n", TOS_NODE_ID, topic);
 		printfflush();
@@ -105,7 +105,7 @@ implementation {
 
 	
 	void publish(uint8_t topic, uint16_t payload) {
-		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, sizeof(pub_sub_msg_t));
+		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 
 		printf("Publishing on topic: %u with QoS=0\n", topic);
 		printfflush();
@@ -195,7 +195,7 @@ implementation {
 		/* This event is triggered when a message is sent 
 		*  Check if the packet is sent
 		*/
-		pub_sub_msg_t* sent_msg = (pub_sub_msg_t *) call Packet.getPayload(bufPtr, sizeof(pub_sub_msg_t));
+		pub_sub_msg_t* sent_msg = (pub_sub_msg_t *) call Packet.getPayload(bufPtr, PUB_SUB_MSG_SIZE);
 		
 		if ( sent_msg->type == CONNECT && call Acks.wasAcked(bufPtr) ){
 			printf("Successfully connected\n");
@@ -230,7 +230,7 @@ implementation {
 	
 	event message_t* Receive.receive(message_t* bufPtr, void* payload, uint8_t len) {
 		
-		if (len == sizeof(pub_sub_msg_t)) {
+		if (len == PUB_SUB_MSG_SIZE) {
 			pub_sub_msg_t* recv_msg = (pub_sub_msg_t*) payload;
 			printf("Received message, type: %u, from: %u, topic: %u, payload: %u\n", recv_msg->type, recv_msg->sender, recv_msg->topic, recv_msg->payload);
 			printfflush();
