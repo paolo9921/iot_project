@@ -65,10 +65,13 @@ implementation {
 		queue_msg_t dequeued = (queue_msg_t) call MsgQueue.dequeue();
 		pub_sub_msg_t* to_send = (pub_sub_msg_t *) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 		
-		*to_send = *dequeued.payload;
+		to_send->type = dequeued.type;
+		to_send->sender = dequeued.sender;
+		to_send->topic = dequeued.topic;
+		to_send->payload = dequeued.payload;
 
-		printf("Sending msg to: %u, on topic:%u\n", dequeued.dest, dequeued.payload->topic);
-                printfflush();
+		printf("Sending message, with dest:%d, message_payload: type=%d, sender=%d, topic=%d, payload=%d\n", dequeued.dest, to_send->type, to_send->sender, to_send->topic, to_send->payload);
+      printfflush();
 
 		actual_send(dequeued.dest, &packet);
 	}
@@ -113,10 +116,13 @@ implementation {
 
 					if (nodes[i].topics[recv_msg->topic]){
 						to_enqueue.dest = i+2;
-						to_enqueue.payload = recv_msg;
+						to_enqueue.type = recv_msg->type;
+						to_enqueue.sender = recv_msg->sender;
+						to_enqueue.topic = recv_msg->topic;
+						to_enqueue.payload = recv_msg->payload;
 
 						if ( (call MsgQueue.enqueue(to_enqueue)) == SUCCESS){
-							printf("Enqueued message, with dest:%d\t and payload: topic=%d, sender=%d, payload=%d\n", to_enqueue.dest, to_enqueue.payload->topic, to_enqueue.payload->sender, to_enqueue.payload->payload);
+							printf("Enqueued message, with dest:%d, message_payload: type=%d, sender=%d, topic=%d, payload=%d\n", to_enqueue.dest, to_enqueue.type, to_enqueue.sender, to_enqueue.topic, to_enqueue.payload);
 							printfflush();
 						}
 						else {
@@ -126,8 +132,8 @@ implementation {
 					}
 				}
 				
-				if (call MsgQueue.empty() == FALSE ){
-					//there is at least one PUB message in the queue to be forwarded	
+				if (call MsgQueue.empty() == FALSE && locked == FALSE){
+					//there is at least one PUB message in the queue to be forwarded AND the radio is free	
 					send_publish();	
 				}
 			}
@@ -136,8 +142,7 @@ implementation {
 		return bufPtr;
 	}
 	
-	
-	
+
 	bool actual_send (uint16_t address, message_t* packet){
 
 		if (!locked){
@@ -152,20 +157,21 @@ implementation {
 		return locked;	  
 	}
   
+  
 	event void AMSend.sendDone(message_t* bufPtr, error_t error) {
 		/* This event is triggered when a message is sent 
 		*  Check if the packet is sent
 		*/
-		if (&packet == bufPtr)
+		if (&packet == bufPtr){
 			locked = FALSE;
 
-		printf("Send done, unlocking the radio\n");
-		printfflush();
-		
-		if (call MsgQueue.empty() == FALSE){
-			//there is at least one message in the queue to be forwarded
-			send_publish();
-		}	 
+			printf("Send done, unlocking the radio\n");
+			printfflush();
+			
+			if (call MsgQueue.empty() == FALSE){
+				//there is at least one message in the queue to be forwarded
+				send_publish();
+			}
+		}	
 	}
-
 }

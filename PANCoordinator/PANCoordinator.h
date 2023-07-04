@@ -12,7 +12,10 @@ typedef struct node_info{
 
 typedef struct queue_msg{
 	uint16_t dest;
-	pub_sub_msg_t * payload;
+	uint8_t type;
+	uint8_t sender;
+	uint8_t topic;
+	uint16_t payload_p;
 } queue_msg_t;
 
 #endif
