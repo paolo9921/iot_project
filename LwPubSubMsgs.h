@@ -5,6 +5,7 @@
 
 #define TIME_TO_LOSS 5
 #define MSG_QUEUE_SIZE 32
+#define PUB_SUB_MSG_SIZE sizeof(pub_sub_msg_t)
 
 typedef nx_struct pub_sub_msg{
 	nx_uint8_t type;
