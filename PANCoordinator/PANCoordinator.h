@@ -15,7 +15,7 @@ typedef struct queue_msg{
 	uint8_t type;
 	uint8_t sender;
 	uint8_t topic;
-	uint16_t payload_p;
+	uint16_t payload;
 } queue_msg_t;
 
 #endif
