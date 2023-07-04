@@ -37,13 +37,12 @@ implementation {
 
 	bool connect_ack = FALSE;
 
-	uint8_t new_topic;
+	uint8_t new_topic = 0;
 	bool sub_ack = FALSE;
-
-	uint8_t nSub;
 	uint8_t totSub;
 
 	uint16_t interval;
+	uint16_t pub_topic;
 
 
 	//prototype of functions
@@ -80,7 +79,7 @@ implementation {
 	
 		actual_send(PAN_C, &packet);
 		
-		call Timer0.startOneShot(TIME_TO_LOSS * 1000);
+		call Timer0.startOneShot(TIME_TO_LOSS);
                 
 		return;
 	}
@@ -100,6 +99,8 @@ implementation {
 
 		actual_send(PAN_C, &packet);
 
+		call Timer0.startOneShot(TIME_TO_LOSS);
+
 		return;
 	}
 
@@ -107,7 +108,7 @@ implementation {
 	void publish(uint8_t topic, uint16_t payload) {
 		pub_sub_msg_t* pub_msg = (pub_sub_msg_t*) call Packet.getPayload(&packet, PUB_SUB_MSG_SIZE);
 
-		printf("Publishing on topic: %u with QoS=0\n", topic);
+		printf("Publishing on topic: %u, payload: %u, with QoS=0\n", topic, payload);
 		printfflush();
 
 		pub_msg->type = PUBLISH;
@@ -133,17 +134,14 @@ implementation {
 			printfflush();
 
 			connect();
-			nSub = 0;
-			
+
 			//node 3,6,9 subscribe to all 3 topics
 			if(TOS_NODE_ID % 3 == 0){
 				totSub = 3;
-				new_topic = 0;
 			}
 			//node 4, 7 subscribe to 2 topics (0,1)
 			else if(TOS_NODE_ID % 3 == 1){
 				totSub = 2;
-				new_topic = 0;
 			}
 			//node 2,5,8 subscribe to 1 topic (2)
 			else {
@@ -176,18 +174,13 @@ implementation {
 	event void Timer1.fired() {
 		//the node is connected and now it is going to subscribe to a topic
 		
-		//printf("sending new subscribe to topic: %u\n",new_topic);
-		//printfflush();
 		subscribe(new_topic);
-		call Timer0.startOneShot(5*1000);
-		
 	}
 
 	
 	event void Timer2.fired() {
-        	//it is going to publish to a random topic, a random value
-	        publish(call Random.rand16() % 3, call Random.rand16() % 100 +1 );
-    	    
+        	//it is going to publish to topic TOS_NODE_ID % 3, a random value between 1 and 100
+	        publish(pub_topic, (call Random.rand16() % 100)+1);
     	}
 
 
@@ -205,13 +198,14 @@ implementation {
 			call Timer1.startOneShot(2*1000);
 
 			interval = ((call Random.rand16() % 20)+1)*1000;
+			pub_topic = TOS_NODE_ID % 3;
 			printf("node: %u next publish (interval) : %u\n", TOS_NODE_ID, interval);
 			printfflush();
 						
 			call Timer2.startPeriodic(interval);
 
 		} else if( sent_msg->type == SUBSCRIBE && call Acks.wasAcked(bufPtr) ){
-            printf("Successfully subscribed to topic %u, new_topic = %u\n", sent_msg->topic, new_topic);
+            printf("Successfully subscribed to topic %u\n", sent_msg->topic);
             printfflush();
             sub_ack = TRUE;
             

@@ -3,7 +3,7 @@
 
 #include "message.h"
 
-#define TIME_TO_LOSS 5
+#define TIME_TO_LOSS 5000
 #define MSG_QUEUE_SIZE 32
 #define PUB_SUB_MSG_SIZE sizeof(pub_sub_msg_t)
 
