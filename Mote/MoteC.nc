@@ -146,8 +146,8 @@ implementation {
 
 	
 	event void Timer2.fired() {
-        	//it is going to publish to topic TOS_NODE_ID % 3, a random value between 1 and 100
-	      publish(pub_topic, (call Random.rand16() % 100)+1);
+		//it is going to publish to topic TOS_NODE_ID % 3, a random value between 1 and 100
+		publish(pub_topic, (call Random.rand16() % 100)+1);
    }
 
 	
