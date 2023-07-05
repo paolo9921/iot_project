@@ -1,0 +1,2 @@
+URL Channel: https://thingspeak.com/channels/2204090
+MQTT_RECEIVER ID: CxwDGwoJEzojOC8zHT0XKzk
