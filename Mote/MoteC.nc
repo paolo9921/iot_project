@@ -4,6 +4,7 @@
 
 
 #define PAN_C 1
+#define MAX_INTERVAL 20
 
 module MoteC @safe() {
 	uses {
@@ -214,7 +215,7 @@ implementation {
 			//After connecting each node is going to define their PUB specifications:
 			//  - frequency of publication, namely the interval;
 			//  - the topic of publication.
-			interval = ((call Random.rand16() % 20)+1)*1000;
+			interval = ((call Random.rand16() % MAX_INTERVAL)+1)*1000;
 			pub_topic = TOS_NODE_ID % 3;
 
 			printf("Publish interval: %u\n", interval);
